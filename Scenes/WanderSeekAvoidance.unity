@@ -449,6 +449,8 @@ MonoBehaviour:
   m_linearResultWeight: 50
   m_angularResultWeight: 1
   m_probability: 1
+  showAcceleration: 0
+  showState: 0
   isActive: 1
   wanderOffset: 11.07
   wanderRadius: 9.19
@@ -469,6 +471,8 @@ MonoBehaviour:
   m_linearResultWeight: 5
   m_angularResultWeight: 1
   m_probability: 1
+  showAcceleration: 0
+  showState: 0
   isActive: 1
   collisionLayer:
     serializedVersion: 2
@@ -492,6 +496,8 @@ MonoBehaviour:
   m_linearResultWeight: 1
   m_angularResultWeight: 1
   m_probability: 1
+  showAcceleration: 0
+  showState: 0
   isActive: 1
   steeringBehaviours:
   - {fileID: 286370502}
@@ -618,6 +624,8 @@ MonoBehaviour:
   m_linearResultWeight: 10
   m_angularResultWeight: 1
   m_probability: 1
+  showAcceleration: 0
+  showState: 0
   isActive: 1
   m_targetPosition: {x: 0, y: 0, z: 0}
   m_target: {fileID: 1263231616}
@@ -637,6 +645,8 @@ MonoBehaviour:
   m_linearResultWeight: 0.1
   m_angularResultWeight: 1
   m_probability: 1
+  showAcceleration: 0
+  showState: 0
   isActive: 1
   steeringBehaviours:
   - {fileID: 286370503}

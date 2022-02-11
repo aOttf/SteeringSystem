@@ -7,6 +7,9 @@ namespace SteeringSystem
         [SerializeField] protected Vector3 m_targetPosition;
         [SerializeField] protected Transform m_target;
 
+        [Header("Gizmos")]
+        public bool showTarget;
+
         public Vector3 TargetPosition
         {
             get => (m_target == null) ? m_targetPosition : m_target.position;
@@ -23,9 +26,12 @@ namespace SteeringSystem
         protected override void OnDrawGizmos()
         {
             base.OnDrawGizmos();
-            //Draw Target Position
-            Gizmos.color = Color.red;
-            Gizmos.DrawLine(transform.position, TargetPosition);
+            if (showTarget)
+            {
+                //Draw Target Position
+                Gizmos.color = Color.red;
+                Gizmos.DrawLine(transform.position, TargetPosition);
+            }
         }
     }
 }

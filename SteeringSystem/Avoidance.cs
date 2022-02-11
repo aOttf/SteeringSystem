@@ -18,9 +18,13 @@ namespace SteeringSystem
         //Cache
         protected float m_radius;
         protected float m_halfCollisionRayRate;
-        protected Vector3 m_targetPosition;
+        protected Vector3 m_targetVelocity;
 
         protected bool m_isAvoiding = false;
+        protected bool m_isHit;
+
+        [Header("Gizmo")]
+        public bool showCollisionRay;
 
         // Start is called before the first frame update
         protected override void Start()
@@ -41,31 +45,20 @@ namespace SteeringSystem
                 int i = 0;
 
                 //looping Until we find a ray that doesn't hit colliders AND passes the sweep test
-                bool hit;
-                Color rayColor;
                 do
                 {
                     m_collisionRay = new Ray(transform.position, Quaternion.AngleAxis(angle, Vector3.up) * transform.forward);
 
-                    hit =
+                    m_isHit =
                         Physics.Raycast(m_collisionRay, collisionRayLength, collisionLayer, QueryTriggerInteraction.UseGlobal) ||
                         Physics.SphereCast(m_collisionRay, m_radius, collisionRayLength, collisionLayer);
 
-                    #region Runtime Debug
-
-                    rayColor = hit ? Color.red : Color.green;
-
-                    Debug.DrawLine(m_collisionRay.origin, m_collisionRay.origin + m_collisionRay.direction * collisionRayLength, rayColor, .5f);
-
-                    #endregion Runtime Debug
-
                     angle = -angle + i++ % 2 * collisionRayStep;
                 }
-                while (hit && Mathf.Abs(angle) < m_halfCollisionRayRate);
+                while (m_isHit && Mathf.Abs(angle) < m_halfCollisionRayRate);
 
-                //Seek to the new position
-                m_targetPosition = m_collisionRay.direction * m_maxLinearSpeed;
-                return SteeringOutput.LinearSteering((m_targetPosition - m_agent.linearVelocity) * m_maxLinearAcceleration);
+                //Match the goal velocity
+                return SteeringUtilities.MatchVelocity(m_collisionRay.direction * m_maxLinearSpeed, m_agent.linearVelocity, m_maxLinearAcceleration);
             }
 
             return SteeringOutput.ZeroSteering;
@@ -74,6 +67,12 @@ namespace SteeringSystem
         protected override void OnDrawGizmos()
         {
             base.OnDrawGizmos();
+
+            if (showCollisionRay && Application.isPlaying)
+            {
+                Color rayColor = m_isHit ? Color.red : Color.green;
+                Debug.DrawLine(m_collisionRay.origin, m_collisionRay.origin + m_collisionRay.direction * collisionRayLength, rayColor, .5f);
+            }
 
             //Draw Collision Arc
             Vector3 from;

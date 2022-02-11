@@ -11,6 +11,14 @@ namespace SteeringSystem
         public float wanderRadius;
         public float wanderRate;
 
+        #region Debug Options
+
+        [Header("Gizmos")]
+        public bool showWanderOffset;
+        public bool showWanderRadius;
+
+        #endregion Debug Options
+
         protected override SteeringOutput GetSteering()
         {
             //Wander
@@ -27,12 +35,13 @@ namespace SteeringSystem
             //Draw Wander Params
             Gizmos.color = Color.yellow;
             Vector3 to = transform.position + transform.forward * wanderOffset;
-            //wander sphere with offset
-            Gizmos.DrawLine(transform.position, to);
-            Gizmos.DrawSphere(to, wanderRadius);
-            //linear acceleration
-            Gizmos.color = Color.red;
-            Gizmos.DrawLine(transform.position, transform.position + m_targetDirection);
+            if (showWanderOffset)
+            {
+                //wander sphere with offset
+                Gizmos.DrawLine(transform.position, to);
+            }
+            if (showWanderRadius)
+                Gizmos.DrawSphere(to, wanderRadius);
         }
     }
 }

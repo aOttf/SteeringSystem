@@ -7,7 +7,7 @@ using UnityEngine.AI;
 namespace SteeringSystem
 {
     [RequireComponent(typeof(CharacterController))]
-    public class SteeringAgent : MonoBehaviour, IMoveable
+    public class SteeringAgent : MonoBehaviour, ICapsuleMoveable
     {
         public float steeringRoutineTimeStep = .02f;
         public SteeringBehaviour currentSteering;   //The current steering behaviour chosen to be executed; Agent executes only one steeering behaviour in a period
@@ -53,16 +53,31 @@ namespace SteeringSystem
         public float angularVelocity => m_angularVelocity;
         public float angularAcceleration => m_angularAcceleration;
 
+        public float height => m_controller.height;
+
+        public float radius => m_controller.radius;
+
         #endregion IMoveable Interface
 
+        #region Debug Options
+
+        [Header("Gizmos")]
+        public bool showLinearVelocity;
+        public bool showDirection;
+
+        #endregion Debug Options
+
         public bool ChangeCurrentSteering(string pSteeringName) => m_steerings.TryGetValue(pSteeringName, out currentSteering);
+
+        private void Awake()
+        {
+            //Get Components
+            m_controller = GetComponent<CharacterController>();
+        }
 
         // Start is called before the first frame update
         private void Start()
         {
-            //Get Components
-            m_controller = GetComponent<CharacterController>();
-
             //Get all steering behaviours attached and cache into the dictionary
             m_steerings = new Dictionary<string, SteeringBehaviour>();
             foreach (var steer in GetComponents<SteeringBehaviour>())
@@ -78,7 +93,6 @@ namespace SteeringSystem
             //Ground
             if (Mathf.Abs(m_linearVelocity.y) > float.Epsilon)
                 m_linearVelocity.y = 0f;
-
             //Apply Acceleration
             m_linearVelocity = Vector3.ClampMagnitude(m_linearVelocity + m_linearAcceleration * Time.deltaTime, maxLinearSpeed);
 
@@ -95,7 +109,7 @@ namespace SteeringSystem
             else
             {
                 //Only if we have a linear velocity
-                if (m_linearVelocity.sqrMagnitude > float.Epsilon)
+                if (m_linearVelocity != Vector3.zero)
                 {
                     //the angular velocity applies to linear velocity
                     //m_linearVelocity = Quaternion.AngleAxis(Vector3.SignedAngle(m_linearVelocity, m_linearAcceleration, transform.up), transform.up) * m_linearVelocity;
@@ -108,6 +122,7 @@ namespace SteeringSystem
             //Move
             if (m_linearVelocity.sqrMagnitude > float.Epsilon)
                 m_controller.Move(m_linearVelocity * Time.deltaTime);
+            transform.position = new Vector3(transform.position.x, 0, transform.position.z);
         }
 
         private IEnumerator Steering()
@@ -126,6 +141,19 @@ namespace SteeringSystem
 
         private void OnDrawGizmos()
         {
+            if (showDirection)
+            {
+                Gizmos.color = Color.green;
+                Gizmos.DrawLine(transform.position, transform.position + transform.forward * 2);
+            }
+            if (Application.isPlaying)
+            {
+                if (showLinearVelocity)
+                {
+                    Gizmos.color = Color.black;
+                    Gizmos.DrawLine(transform.position, transform.position + linearVelocity);
+                }
+            }
         }
     }
 }

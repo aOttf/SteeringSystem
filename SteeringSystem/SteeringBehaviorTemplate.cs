@@ -20,13 +20,29 @@ namespace SteeringSystem
         public static SteeringOutput Clip(SteeringOutput pResult, float maxLinear, float maxAngualr)
             => new SteeringOutput(Vector3.ClampMagnitude(pResult.Linear, maxLinear), Mathf.Max(pResult.Angular, maxAngualr));
 
+        #region Operator Overloadings
+
         public static SteeringOutput operator +(SteeringOutput a, SteeringOutput b)
             => new SteeringOutput(a.Linear + b.Linear, a.Angular + b.Angular);
 
         public static SteeringOutput operator -(SteeringOutput a, SteeringOutput b)
             => new SteeringOutput(a.Linear - b.Linear, a.Angular - b.Angular);
 
-        public static bool IsZero(SteeringOutput a) => (a.Linear == Vector3.zero) && (a.Angular == 0);
+        public static SteeringOutput operator *(SteeringOutput a, float mult)
+            => new SteeringOutput(a.Linear * mult, a.Angular * mult);
+
+        public static SteeringOutput operator *(float mult, SteeringOutput a)
+          => new SteeringOutput(a.Linear * mult, a.Angular * mult);
+
+        public static SteeringOutput operator *(SteeringOutput a, int mult)
+            => new SteeringOutput(a.Linear * mult, a.Angular * mult);
+
+        public static SteeringOutput operator *(int mult, SteeringOutput a)
+          => new SteeringOutput(a.Linear * mult, a.Angular * mult);
+
+        #endregion Operator Overloadings
+
+        public static bool IsZero(SteeringOutput a) => (a.Linear == Vector3.zero) && Mathf.Approximately(a.Angular, 0f);
 
         public static SteeringOutput ZeroSteering => new SteeringOutput(default, default);
 
@@ -69,14 +85,6 @@ namespace SteeringSystem
 
         #endregion Weight Variables
 
-        //#region Priority Variables
-
-        //[SerializeField] protected int m_priority = 1;  //The Steering Behaviour's priority value is used in blended steering
-
-        //public int Priority => m_priority;
-
-        //#endregion Priority Variables
-
         #region Probability Variables
 
         [SerializeField] protected float m_probability = 1f;  //The Steering Behaviour's probability value is used in blended steering
@@ -84,7 +92,15 @@ namespace SteeringSystem
 
         #endregion Probability Variables
 
-        //Whether the steering behavior is being performed
+        #region Debug Options
+
+        [Header("Gizmos")]
+        public bool showAcceleration;
+        public bool showState;
+
+        #endregion Debug Options
+
+        [Space]
         public bool isActive = true;
 
         protected virtual void Awake()
@@ -102,31 +118,27 @@ namespace SteeringSystem
             m_maxAngularSpeed = m_agent.maxAngularSpeed;
         }
 
-        public SteeringOutput Steering => (m_result = (isActive) ? (Multiply(GetSteering())) : SteeringOutput.ZeroSteering);
+        public SteeringOutput Steering => m_result = isActive ? Multiply(GetSteering()) : SteeringOutput.ZeroSteering;
 
         protected abstract SteeringOutput GetSteering();
 
-        public virtual SteeringOutput MatchVariable(Vector3 tgt)
-        { return SteeringOutput.ZeroSteering; }
-
         protected SteeringOutput Multiply(SteeringOutput pOutput) =>
             new SteeringOutput(pOutput.Linear * m_linearResultWeight, pOutput.Angular * m_angularResultWeight);
-
-        //protected SteeringOutput Clip(SteeringOutput pOutput) =>
-        //    new SteeringOutput(Vector3.ClampMagnitude(pOutput.Linear, m_maxLinearAcceleration * m_linearLimitWeight), Mathf.Max(pOutput.Angular, m_maxAngularSpeed * m_angularLimitWeight));
 
         protected virtual void OnDrawGizmos()
         {
             if (Application.isPlaying)
             {
-                if (!SteeringOutput.IsZero(m_result))
-                    Handles.Label(transform.position, SteeringName);
+                if (showState)
+                {
+                    if (!SteeringOutput.IsZero(m_result))
+                        Handles.Label(transform.position, SteeringName);
+                }
 
-                Gizmos.DrawLine(transform.position, transform.position + m_result.Linear);
+                if (showAcceleration)
+                    Gizmos.DrawLine(transform.position, transform.position + m_result.Linear);
             }
         }
-
-        //public override string ToString() => "SteeringBehaviour: ";
     }
 
     public abstract class GroupSteering : SteeringBehaviour
@@ -136,11 +148,23 @@ namespace SteeringSystem
         //Cache
         public static List<Transform> groupMembers;
 
+        #region Debug Options
+
+        public bool showNeighbours;
+
+        #endregion Debug Options
+
         protected override void Awake()
         {
             //Find all group members
+            groupMembers = new List<Transform>();
             groupMembers.AddRange(GameObject.FindGameObjectsWithTag(tagName).ToList().ConvertAll(member => member.transform));
             base.Awake();
+        }
+
+        protected override void OnDrawGizmos()
+        {
+            base.OnDrawGizmos();
         }
     }
 }
