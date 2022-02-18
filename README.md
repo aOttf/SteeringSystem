@@ -1,7 +1,12 @@
 # SteeringSystem
 A Steering System consisting of common single and group steering behaviors.
 
-References:
+
+# Basic Archetecure
+
+
+
+# References:
 
 [Programming Game AI by Example](https://www.amazon.ca/Programming-Game-Example-Mat-Buckland/dp/1556220782).
 
