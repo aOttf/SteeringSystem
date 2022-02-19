@@ -10,13 +10,9 @@ A Steering System consisting of common single and group steering behaviors.
 
 https://user-images.githubusercontent.com/49035217/154821679-47f60a56-8202-438c-b34a-dea20957392c.mp4
 
-> Seek with Avoidance
-
-https://user-images.githubusercontent.com/49035217/154785965-291512ec-a371-452d-94fa-a94040d72204.mp4
-
 > Wander with Avoidance
 
-https://user-images.githubusercontent.com/49035217/154785966-a6796d70-5302-4ae3-a1f2-9e63270a0fcd.mp4
+https://user-images.githubusercontent.com/49035217/154823019-7fca7f17-5d4c-439f-a271-86a685a46fcc.mp4
 
 # How to Use
 
