@@ -3,12 +3,13 @@ A Steering System consisting of common single and group steering behaviors.
 
 
 # Basic Archetecure
+![Class Diagram](https://github.com/aOttf/SteeringSystem/blob/main/PreviewImage/SteeringUML.png)
 
 # Examples
 
 # How to Use
 
-#Additional Info
+# Additional Info
 
 # References:
 
