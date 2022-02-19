@@ -14,7 +14,7 @@ namespace SteeringSystem
             //Get the first midpoint of A and B
             Vector3 midPoint1 = (m_targetA.position + m_targetB.position) / 2;
             //Predict the Time to reach
-            float timePred = Vector3.Distance(transform.position, midPoint1) / m_agent.maxLinearSpeed;
+            float timePred = Vector3.Distance(transform.position, midPoint1) / m_maxLinearSpeed;
             //Predict the future position of A and B
             Vector3 posPredA = m_targetA.position + m_targetA.linearVelocity * timePred;
             Vector3 posPredB = m_targetB.position + m_targetB.linearVelocity * timePred;

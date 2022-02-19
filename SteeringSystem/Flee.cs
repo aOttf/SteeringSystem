@@ -21,4 +21,11 @@ namespace SteeringSystem
 
         public override string ToString() => base.ToString() + "Flee";
     }
+
+    public class Flee2 : Seek
+    {
+        protected override SteeringOutput GetSteering() => -base.GetSteering();
+
+        public override string ToString() => base.ToString() + "Flee";
+    }
 }

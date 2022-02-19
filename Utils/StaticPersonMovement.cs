@@ -26,14 +26,6 @@ namespace Assets.Scripts.CookBook
         // Update is called once per frame
         private void Update()
         {
-            //Grounded Detection
-            m_isGrounded = m_controller.isGrounded;
-            //Debug.Log(m_isGrounded);
-            if (m_isGrounded && m_velocity.y < 0)
-            {
-                m_velocity.y = 0;
-            }
-
             //Get input
             float hInput = Input.GetAxis("Horizontal");
             float vInput = Input.GetAxis("Vertical");
@@ -53,10 +45,8 @@ namespace Assets.Scripts.CookBook
                 m_velocity.y += Mathf.Sqrt(m_maxJumpHeight * -2.0f * m_gravity);
             }
 
-            m_velocity.y += m_gravity * Time.deltaTime;
-
             //Move
-            m_controller.Move(m_velocity * Time.deltaTime);
+            m_controller.Move((m_velocity + m_gravity * Vector3.up) * Time.deltaTime);
         }
 
         private void OnControllerColliderHit(ControllerColliderHit hit)

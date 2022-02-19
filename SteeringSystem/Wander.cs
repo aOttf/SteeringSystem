@@ -3,8 +3,12 @@ using UnityEditor;
 
 namespace SteeringSystem
 {
+    /// <summary>
+    /// Wandering Behaviour in 2.5D environment
+    /// </summary>
     public class Wander : SteeringBehaviour
     {
+        protected float m_wanderOrientation;
         protected Vector3 m_targetDirection;
 
         public float wanderOffset;
@@ -19,12 +23,19 @@ namespace SteeringSystem
 
         #endregion Debug Options
 
+        protected override void Start()
+        {
+            base.Start();
+            m_wanderOrientation = 0f;
+        }
+
         protected override SteeringOutput GetSteering()
         {
             //Wander
             //Get target orientation
-            m_targetDirection = Quaternion.AngleAxis(Random.Range(-wanderRate, wanderRate), Vector3.up) * transform.forward;
-            return SteeringOutput.LinearSteering(m_maxLinearAcceleration * ((transform.forward * wanderOffset + m_targetDirection * wanderRadius).normalized));
+            m_wanderOrientation += UnityEngine.Random.Range(-wanderRate, wanderRate);
+            m_targetDirection = Quaternion.AngleAxis(m_wanderOrientation, m_entity.up) * m_entity.forward;
+            return SteeringOutput.LinearSteering(m_maxLinearAcceleration * ((m_entity.forward * wanderOffset + m_targetDirection * wanderRadius).normalized));
         }
 
         public override string ToString() => base.ToString() + "Wander";

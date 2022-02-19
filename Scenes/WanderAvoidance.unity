@@ -476,6 +476,7 @@ GameObject:
   - component: {fileID: 377745752}
   - component: {fileID: 377745751}
   - component: {fileID: 377745750}
+  - component: {fileID: 377745755}
   - component: {fileID: 377745749}
   - component: {fileID: 377745748}
   - component: {fileID: 377745747}
@@ -498,14 +499,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ce61b60b5c7bb6949a550a98ad820e5e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SteeringName: Wander
-  m_linearResultWeight: 100
+  m_linearResultWeight: 20
   m_angularResultWeight: 1
   m_probability: 1
+  showAcceleration: 0
+  showState: 0
+  additionalInfo: 
   isActive: 1
   wanderOffset: 11.07
-  wanderRadius: 9.19
+  wanderRadius: 4.37
   wanderRate: 61.35
+  showWanderOffset: 1
+  showWanderRadius: 1
 --- !u!114 &377745748
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -518,10 +523,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d54f6c49b1e11c4aa0bcacdf44f5665, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SteeringName: Avoidance
   m_linearResultWeight: 5
   m_angularResultWeight: 1
   m_probability: 1
+  showAcceleration: 0
+  showState: 0
+  additionalInfo: 
   isActive: 1
   collisionLayer:
     serializedVersion: 2
@@ -529,6 +536,7 @@ MonoBehaviour:
   collisionRayStep: 10
   collisionRayRate: 111.73
   collisionRayLength: 5.34
+  showCollisionRay: 0
 --- !u!114 &377745749
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -541,10 +549,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7aeb2c35adc5894880d03d4076295ab, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  SteeringName: BLended
   m_linearResultWeight: 1
   m_angularResultWeight: 1
   m_probability: 1
+  showAcceleration: 0
+  showState: 0
+  additionalInfo: 
   isActive: 1
   steeringBehaviours:
   - {fileID: 377745748}
@@ -562,18 +572,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b463611cd2fe5794ab57353cb5d5070d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  steeringRoutineTimeStep: 0.02
-  currentSteering: {fileID: 377745749}
   lookWhere2Go: 1
-  onGround: 1
   maxLinearAcceleration: 8
   maxLinearSpeed: 8
   maxAngularAcceleration: 0
   maxAngularSpeed: 0
-  m_linearVelocity: {x: 0, y: 0, z: 0}
-  m_linearAcceleration: {x: 0, y: 0, z: 0}
-  m_angularVelocity: 0
-  m_angularAcceleration: 0
+  m_gravity: -19.6
+  m_lockOnGround: 0
+  m_yLockOffset: 0
+  showLinearVelocity: 0
+  showDirection: 0
 --- !u!143 &377745751
 CharacterController:
   m_ObjectHideFlags: 0
@@ -655,6 +663,21 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 12
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &377745755
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 377745746}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b1a155dac8cb964ea70f3571dbbff61, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  type: 0
+  steeringRoutineTimeStep: 0.02
+  m_currentSteering: {fileID: 377745749}
 --- !u!1 &554218879
 GameObject:
   m_ObjectHideFlags: 0

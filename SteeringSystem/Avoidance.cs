@@ -58,7 +58,7 @@ namespace SteeringSystem
                 while (m_isHit && Mathf.Abs(angle) < m_halfCollisionRayRate);
 
                 //Match the goal velocity
-                return SteeringUtilities.MatchVelocity(m_collisionRay.direction * m_maxLinearSpeed, m_agent.linearVelocity, m_maxLinearAcceleration);
+                return SteeringUtilities.MatchVelocity(m_collisionRay.direction * m_maxLinearSpeed, m_entity.linearVelocity, m_maxLinearAcceleration);
             }
 
             return SteeringOutput.ZeroSteering;

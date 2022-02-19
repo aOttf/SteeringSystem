@@ -1,61 +1,66 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
-using UnityEditor;
-using UnityEngine.AI;
 
 namespace SteeringSystem
 {
-    [RequireComponent(typeof(CharacterController))]
-    public class SteeringAgent : MonoBehaviour, ICapsuleMoveable
+    [RequireComponent(typeof(CharacterController), typeof(SteeringController))]
+    public class SteeringAgent : MonoBehaviour, ISphereMoveable
     {
-        public float steeringRoutineTimeStep = .02f;
-        public SteeringBehaviour currentSteering;   //The current steering behaviour chosen to be executed; Agent executes only one steeering behaviour in a period
+        #region Caches
 
-        //Caches
-        private CharacterController m_controller;
+        private CharacterController m_cc;
+        private SteeringController m_sc;
 
-        //private List<SteeringBehaviour> m_steerings;    //Caches all the steering behaviors attached to this
-        private Dictionary<string, SteeringBehaviour> m_steerings;
-        //private Wander m_wander;
-        //private Avoidance m_avoidance;
+        private Vector3 m_linearVelocity;
+        private Vector3 m_linearAcceleration;
+        private float m_angularVelocity;
+        private float m_angularAcceleration;
 
-        #region Agent Type Settings
+        #endregion Caches
 
+        #region Agent Movement
+
+        [Tooltip("Sync Agent's orientation with its velocity direction. If enabled, the angular velocity is omitted.")]
         public bool lookWhere2Go;
-        public bool onGround;
-
-        #endregion Agent Type Settings
-
-        #region Agent Movement Attributes
 
         public float maxLinearAcceleration;
         public float maxLinearSpeed;
         public float maxAngularAcceleration;
         public float maxAngularSpeed;
 
-        #endregion Agent Movement Attributes
+        #endregion Agent Movement
 
-        #region Agent Current Velocity
+        #region Ground Detection Settings
 
-        [SerializeField] private Vector3 m_linearVelocity;
-        [SerializeField] private Vector3 m_linearAcceleration;
-        [SerializeField] private float m_angularVelocity;
-        [SerializeField] private float m_angularAcceleration;
+        private bool m_isGrounded;
 
-        #endregion Agent Current Velocity
+        [Tooltip("Value of the gravity")]
+        [SerializeField] private float m_gravity = -19.6f;
+
+        [Tooltip("Lock the agent's y offset to yLockOffset. If enabled, the gravity settings are ignored.")]
+        [SerializeField] private bool m_lockOnGround = false;
+        [SerializeField] private float m_yLockOffset = 0f;
+
+        #endregion Ground Detection Settings
 
         #region IMoveable Interface
 
         public Vector3 position => transform.position;
+        public Vector3 forward => transform.forward;
+        public Vector3 up => transform.up;
         public Vector3 linearVelocity => m_linearVelocity;
         public Vector3 linearAcceleration => m_linearAcceleration;
         public float angularVelocity => m_angularVelocity;
         public float angularAcceleration => m_angularAcceleration;
 
-        public float height => m_controller.height;
+        public float radius => m_cc.radius;
 
-        public float radius => m_controller.radius;
+        public float MaxLinearSpeed => maxLinearSpeed;
+
+        public float MaxAngularSpeed => maxAngularSpeed;
+
+        public float MaxLinearAcceleration => maxLinearAcceleration;
+
+        public float MaxAngularAcceleration => maxAngularAcceleration;
 
         #endregion IMoveable Interface
 
@@ -67,76 +72,62 @@ namespace SteeringSystem
 
         #endregion Debug Options
 
-        public bool ChangeCurrentSteering(string pSteeringName) => m_steerings.TryGetValue(pSteeringName, out currentSteering);
-
+        //----------Debug
         private void Awake()
         {
             //Get Components
-            m_controller = GetComponent<CharacterController>();
+            m_cc = GetComponent<CharacterController>();
+            m_cc.minMoveDistance = float.Epsilon;
+            m_sc = GetComponent<SteeringController>();
         }
 
         // Start is called before the first frame update
         private void Start()
         {
-            //Get all steering behaviours attached and cache into the dictionary
-            m_steerings = new Dictionary<string, SteeringBehaviour>();
-            foreach (var steer in GetComponents<SteeringBehaviour>())
-                m_steerings.Add(steer.SteeringName, steer);
-
-            //Routine Steering Calculation
-            StartCoroutine(nameof(Steering));
+            //Start Steering
+            m_sc.StartSteering();
         }
 
         // Update is called once per frame
         private void Update()
         {
-            //Ground
-            if (Mathf.Abs(m_linearVelocity.y) > float.Epsilon)
-                m_linearVelocity.y = 0f;
+            //Grounded Detection
+            m_isGrounded = m_cc.isGrounded;
+            //if (m_isGrounded && m_linearVelocity.y < 0)
+            //{
+            //    m_linearVelocity.y = 0;
+            //}
+            //else if (!m_isGrounded && m_applyGravity)
+            //{
+            //    //Apply Gravity
+            //    m_linearVelocity.y += m_gravity * Time.deltaTime;
+            //}
+
+            ////----------- Debug
+            //m_linearVelocity.y = 0;
+
             //Apply Acceleration
-            m_linearVelocity = Vector3.ClampMagnitude(m_linearVelocity + m_linearAcceleration * Time.deltaTime, maxLinearSpeed);
+            m_linearVelocity = Vector3.ClampMagnitude(m_linearVelocity + (m_linearAcceleration = m_sc.linearAcceleration) * Time.deltaTime, maxLinearSpeed);
+            m_angularVelocity = Mathf.Clamp(m_angularVelocity + (m_angularAcceleration = m_sc.angularAcceleration) * Time.deltaTime, -maxAngularSpeed, maxAngularSpeed);
 
-            m_angularVelocity = Mathf.Clamp(m_angularVelocity + m_angularAcceleration * Time.deltaTime, -maxAngularSpeed, maxAngularSpeed);
-
-            //Face
-            //If not look to where to go, angular velocity doesn't affect linear velocity direction
-
+            //Apply Angular Velocity
             if (!lookWhere2Go)
             {
-                //the angular velocity applies to face
                 transform.forward = Quaternion.AngleAxis(m_angularVelocity * Time.deltaTime, transform.up) * transform.forward;
             }
-            else
+            else if (m_linearVelocity != Vector3.zero)
             {
-                //Only if we have a linear velocity
-                if (m_linearVelocity != Vector3.zero)
-                {
-                    //the angular velocity applies to linear velocity
-                    //m_linearVelocity = Quaternion.AngleAxis(Vector3.SignedAngle(m_linearVelocity, m_linearAcceleration, transform.up), transform.up) * m_linearVelocity;
-
-                    //Sync Face with velocity direction
-                    transform.forward = m_linearVelocity;
-                }
+                //Sync Face with velocity direction
+                transform.forward = m_linearVelocity;
             }
 
-            //Move
-            if (m_linearVelocity.sqrMagnitude > float.Epsilon)
-                m_controller.Move(m_linearVelocity * Time.deltaTime);
-            transform.position = new Vector3(transform.position.x, 0, transform.position.z);
-        }
-
-        private IEnumerator Steering()
-        {
-            SteeringOutput res;
-            while (true)
+            //Apply Linear Velocity
+            if (m_lockOnGround)
             {
-                res = currentSteering.Steering;
-                m_linearAcceleration = res.Linear;
-                m_angularAcceleration = res.Angular;
-                //m_linearVelocity = (Vector3.Slerp(m_linearVelocity, m_linearAcceleration, .2f).normalized * m_linearVelocity.magnitude);
-                //yield return new WaitForSeconds(steeringRoutineTimeStep);
-                yield return new WaitForEndOfFrame();
+                m_linearVelocity.y = 0;
+                transform.position = new Vector3(transform.position.x, m_yLockOffset, transform.position.z);
             }
+            m_cc.Move((m_linearVelocity + Vector3.up * m_gravity) * Time.deltaTime);
         }
 
         private void OnDrawGizmos()
