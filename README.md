@@ -8,7 +8,7 @@ A Steering System consisting of common single and group steering behaviors.
 # Examples
 > Crowd Wanderings with Collision and Obstacle Avoidance
 
-https://user-images.githubusercontent.com/49035217/154785939-1c8d515a-5c0c-460c-9298-36a790d96025.mp4
+https://user-images.githubusercontent.com/49035217/154821679-47f60a56-8202-438c-b34a-dea20957392c.mp4
 
 > Seek with Avoidance
 
