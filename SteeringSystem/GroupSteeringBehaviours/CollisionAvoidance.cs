@@ -1,9 +1,4 @@
-using System.Collections;
-using System.Linq;
-using System.Collections.Generic;
 using UnityEngine;
-using System;
-using UnityEditor;
 
 namespace SteeringSystem
 {
@@ -14,37 +9,33 @@ namespace SteeringSystem
     ///
     public class CollisionAvoidance : GroupSteeringBehaviour
     {
-        //public int maxNeighboursCount;
+        #region Debug Options
 
-        public float radius;    //Detecting neighbours
+        [Header("CollisionAvoidance Debuggings")]
+        public bool showAvoidance;
+        public Color neighbourAvoidanceColor;
+
+        #endregion Debug Options
+
+        public static int count = 0;
+
+        [Space(50)]
         public float time2Predict;  //Only Consider Future Collisions less than a given time
         public float deviationAngle;
 
         //Caches
-        protected List<ISphereMoveable> m_neighbours;
         protected Vector3 m_acceleration;
 
         protected override void Awake()
         {
             //Init
-            tagName = "SphereMoveable";
             base.Awake();
         }
 
         protected override SteeringOutput GetSteering()
         {
             //Get Neighbours
-            m_neighbours
-                 = groupMembers.
-                 FindAll
-                 (member => member != transform && Vector3.Distance(member.position, transform.position) < radius)
-                 .ConvertAll
-                 (member => member.GetComponent<ISphereMoveable>());
-            //.Take
-            //(maxNeighboursCount)
-            //.ToList();
-
-            //    m_neighbourCount = neighbours.Count;
+            FindNeighbours();
 
             // Sum Avoidance Accelerations
             float colTime;
@@ -70,11 +61,10 @@ namespace SteeringSystem
 
         /// <summary>
         /// <para>Derived from the Equation
-        /// dot(deltaV, deltaV) * t^2 + 2*dot(deltaX, deltaV)*t + dot(deltaX, deltaX) - sumRadius^2 = 0
-        /// </para>
-        /// t = (-b +- sqrt(b^2 - 4*a*c)) / (2*a)
-        /// After Simplification, t = (-b +- sqrt(b^2 - a*c))/a,
-        /// where b = dot(deltaX, deltaV), a = dot(deltaV, deltaV), c = (dektaX, deltaX) - sumRadius^2;
+        /// <code>dot(deltaV, deltaV) * t^2 + 2 * dot(deltaX, deltaV) * t + dot(deltaX, deltaX) - sumRadius^2 = 0</code>
+        ///<code>t = (-b +- sqrt(b^2 - 4*a*c)) / (2*a) </code>
+        /// After Simplification,<code> t = (-b +- sqrt(b^2 - a*c))/a</code>,
+        /// where <code>b = dot(deltaX, deltaV), a = dot(deltaV, deltaV), c = (dektaX, deltaX) - sumRadius^2; </code></para>
         /// </summary>
         /// <param name="A">Collision Entity</param>
         /// <param name="B">Another Collision Entity</param>
@@ -103,24 +93,29 @@ namespace SteeringSystem
             return time;
         }
 
-        protected void OnDrawGizmosSelected()
+        protected override void OnDrawGizmosSelected()
         {
-            base.OnDrawGizmos();
+            base.OnDrawGizmosSelected();
+
             if (Application.isPlaying)
             {
-                if (showNeighbours)
+                if (m_neighbours != null && m_neighbours.Count != 0)
                 {
-                    //Draw Neighbour Radius
-                    Gizmos.DrawWireSphere(transform.position, radius);
-
                     //Draw Lines to Neighbours
                     foreach (var nei in m_neighbours)
                     {
-                        Gizmos.color = (Time2Collision(m_entity, nei) < time2Predict) ? Color.red : Color.white;
-                        Gizmos.DrawLine(transform.position, nei.position);
+                        Gizmos.color = (Time2Collision(m_entity, nei) < time2Predict) ? neighbourAvoidanceColor : neighbourSphereColor;
+                        Gizmos.DrawLine(m_entity.position, nei.position);
                     }
                 }
             }
         }
+
+        //private void OnControllerColliderHit(ControllerColliderHit hit)
+        //{
+        //    if (hit.gameObject.tag == this.tag)
+        //        count++;
+        //    print(count);
+        //}
     }
 }

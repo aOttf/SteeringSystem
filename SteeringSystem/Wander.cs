@@ -8,20 +8,20 @@ namespace SteeringSystem
     /// </summary>
     public class Wander : SteeringBehaviour
     {
+        #region Debug Options
+
+        public bool showWanderSphere;
+        public Color wanderSphereColor;
+
+        #endregion Debug Options
+
         protected float m_wanderOrientation;
         protected Vector3 m_targetDirection;
 
+        [Space(50)]
         public float wanderOffset;
         public float wanderRadius;
         public float wanderRate;
-
-        #region Debug Options
-
-        [Header("Gizmos")]
-        public bool showWanderOffset;
-        public bool showWanderRadius;
-
-        #endregion Debug Options
 
         protected override void Start()
         {
@@ -40,19 +40,18 @@ namespace SteeringSystem
 
         public override string ToString() => base.ToString() + "Wander";
 
-        protected override void OnDrawGizmos()
+        protected override void OnDrawGizmosSelected()
         {
-            base.OnDrawGizmos();
+            base.OnDrawGizmosSelected();
+
             //Draw Wander Params
-            Gizmos.color = Color.yellow;
             Vector3 to = transform.position + transform.forward * wanderOffset;
-            if (showWanderOffset)
+            if (showWanderSphere)
             {
+                Gizmos.color = wanderSphereColor;
                 //wander sphere with offset
-                Gizmos.DrawLine(transform.position, to);
-            }
-            if (showWanderRadius)
                 Gizmos.DrawSphere(to, wanderRadius);
+            }
         }
     }
 }

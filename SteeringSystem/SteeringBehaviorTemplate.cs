@@ -126,19 +126,20 @@ namespace SteeringSystem
 
         #endregion Probability Variables
 
+        [Tooltip("Is the steering behaviour currently active")]
+        public bool isActive = true;
+
         #region Debug Options
 
         [Header("Gizmos")]
         public bool showAcceleration;
+        public Color accelerationColor;
         public bool showState;
 
         [Tooltip("Additional Information shown for Debugging")]
         public string additionalInfo = "";
 
         #endregion Debug Options
-
-        [Tooltip("Is the steering behaviour currently active")]
-        public bool isActive = true;
 
         protected virtual void Awake()
         {
@@ -175,7 +176,7 @@ namespace SteeringSystem
         protected SteeringOutput Multiply(SteeringOutput pOutput) =>
             new SteeringOutput(pOutput.Linear * m_linearResultWeight, pOutput.Angular * m_angularResultWeight);
 
-        protected virtual void OnDrawGizmos()
+        protected virtual void OnDrawGizmosSelected()
         {
             if (Application.isPlaying)
             {
@@ -186,38 +187,12 @@ namespace SteeringSystem
                 }
 
                 if (showAcceleration)
+                {
+                    Gizmos.color = accelerationColor;
+                    print("Arrived");
                     Gizmos.DrawLine(m_entity.position, m_entity.position + m_result.Linear);
+                }
             }
-        }
-    }
-
-    /// <summary>
-    /// GroupSteeringBehaviour is the base class from which every concrete Group Steering Behaviour Script derives
-    /// </summary>
-    public abstract class GroupSteeringBehaviour : SteeringBehaviour
-    {
-        public static string tagName;
-
-        //Cache
-        public static List<Transform> groupMembers;
-
-        #region Debug Options
-
-        public bool showNeighbours;
-
-        #endregion Debug Options
-
-        protected override void Awake()
-        {
-            //Find all group members
-            groupMembers = new List<Transform>();
-            groupMembers.AddRange(GameObject.FindGameObjectsWithTag(tagName).ToList().ConvertAll(member => member.transform));
-            base.Awake();
-        }
-
-        protected override void OnDrawGizmos()
-        {
-            base.OnDrawGizmos();
         }
     }
 }

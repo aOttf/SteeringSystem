@@ -6,6 +6,14 @@ namespace SteeringSystem
 {
     public class Seek : SteeringBehaviour
     {
+        #region Debug Options
+
+        public bool showTarget;
+        public Color targetColor;
+
+        #endregion Debug Options
+
+        [Space(50)]
         [Tooltip("The Target Position seeking to")]
         public Vector3 targetPosition;
 
@@ -14,9 +22,6 @@ namespace SteeringSystem
 
         [Tooltip("Match by Velocity or Match by Position")]
         public MatchMode mode = MatchMode.MatchPosition;
-
-        [Header("Gizmos")]
-        public bool showTarget;
 
         public Vector3 TargetPosition
         {
@@ -43,13 +48,13 @@ namespace SteeringSystem
 
         public override string ToString() => base.ToString() + "Seek";
 
-        protected override void OnDrawGizmos()
+        protected override void OnDrawGizmosSelected()
         {
-            base.OnDrawGizmos();
+            base.OnDrawGizmosSelected();
             if (showTarget)
             {
                 //Draw Target Position
-                Gizmos.color = Color.red;
+                Gizmos.color = targetColor;
                 Gizmos.DrawLine(m_entity.position, TargetPosition);
             }
         }

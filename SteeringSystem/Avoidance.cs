@@ -6,6 +6,17 @@ namespace SteeringSystem
     [RequireComponent(typeof(CharacterController))]
     public class Avoidance : SteeringBehaviour
     {
+        #region Debug Options
+
+        public bool showCollisionRay;
+        public Color rayColor;
+        public Color hitColor;
+        public bool showCollisionArc;
+        public Color arcColor;
+
+        #endregion Debug Options
+
+        [Space(50)]
         public LayerMask collisionLayer;
 
         public float collisionRayStep = 2f;
@@ -22,9 +33,6 @@ namespace SteeringSystem
 
         protected bool m_isAvoiding = false;
         protected bool m_isHit;
-
-        [Header("Gizmo")]
-        public bool showCollisionRay;
 
         // Start is called before the first frame update
         protected override void Start()
@@ -64,24 +72,22 @@ namespace SteeringSystem
             return SteeringOutput.ZeroSteering;
         }
 
-        protected override void OnDrawGizmos()
+        protected override void OnDrawGizmosSelected()
         {
-            base.OnDrawGizmos();
-
-            if (showCollisionRay && Application.isPlaying)
-            {
-                Color rayColor = m_isHit ? Color.red : Color.green;
-                Debug.DrawLine(m_collisionRay.origin, m_collisionRay.origin + m_collisionRay.direction * collisionRayLength, rayColor, .5f);
-            }
+            base.OnDrawGizmosSelected();
 
             //Draw Collision Arc
             Vector3 from;
             from = Quaternion.AngleAxis(-collisionRayRate / 2, Vector3.up) * transform.forward;
-            Handles.color = new Color(Color.blue.r, Color.blue.g, Color.blue.b, .1f);
+            Handles.color = arcColor;
             Handles.DrawSolidArc(transform.position, Vector3.up, from, collisionRayRate, collisionRayLength);
 
-            //Draw forward Ray
-            Gizmos.DrawLine(transform.position, transform.position + transform.forward * collisionRayLength);
+            //Draw Collision Ray
+            if (showCollisionRay && Application.isPlaying)
+            {
+                Color rayColor = m_isHit ? this.rayColor : hitColor;
+                Debug.DrawLine(m_collisionRay.origin, m_collisionRay.origin + m_collisionRay.direction * collisionRayLength, rayColor, .2f);
+            }
         }
 
         public override string ToString() => base.ToString() + "Avoidance";

@@ -6,8 +6,8 @@ namespace SteeringSystem
 {
     public class BlendedSteering : SteeringBehaviour
     {
+        [Space(50)]
         public List<SteeringBehaviour> steeringBehaviours;
-
         public CombineMethod method = CombineMethod.WeightedTruncated;
 
         protected override void Start()
@@ -60,9 +60,9 @@ namespace SteeringSystem
             return res;
         }
 
-        protected override void OnDrawGizmos()
+        protected override void OnDrawGizmosSelected()
         {
-            base.OnDrawGizmos();
+            base.OnDrawGizmosSelected();
         }
 
         public override string ToString() => base.ToString() + string.Join("+", steeringBehaviours.ConvertAll(steer => steer.ToString()));

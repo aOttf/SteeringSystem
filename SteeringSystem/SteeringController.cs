@@ -28,10 +28,24 @@ namespace SteeringSystem
         [SerializeField] private SteeringBehaviour m_currentSteering;   //The current steering behaviour chosen to be executed; Agent executes only one steeering behaviour in a period
         public SteeringBehaviour CurrentSteering { get => m_currentSteering; set => m_currentSteering = value; }
 
+        [SerializeField] private bool m_syncSlope;
+
+        [SerializeField] private Vector3 m_planeNormal;
+
         /// <summary>
         /// Is the steering running?
         /// </summary>
         public bool IsRunning => m_isRunning;
+
+        /// <summary>
+        /// Is the Steering Controller sync with a sloped plane?
+        /// </summary>
+        public bool SyncSlope { get => m_syncSlope; set => m_syncSlope = value; }
+
+        /// <summary>
+        /// The Sloped Plane Normal
+        /// </summary>
+        public Vector3 PlaneNormal { get => m_planeNormal; set => m_planeNormal = value; }
 
         #region Caches
 
@@ -117,6 +131,8 @@ namespace SteeringSystem
             while (true)
             {
                 m_acce = m_currentSteering.Steering;
+                if (m_syncSlope)
+                    m_acce.Linear = Vector3.ProjectOnPlane(m_acce.Linear, m_planeNormal);
 
                 //Yield time gap
                 switch (type)

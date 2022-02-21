@@ -502,15 +502,16 @@ MonoBehaviour:
   m_linearResultWeight: 20
   m_angularResultWeight: 1
   m_probability: 1
-  showAcceleration: 0
-  showState: 0
-  additionalInfo: 
   isActive: 1
+  showAcceleration: 1
+  accelerationColor: {r: 0.9528302, g: 0.12944102, b: 0.8165022, a: 0.94509804}
+  showState: 1
+  additionalInfo: 
+  showWanderSphere: 0
+  wanderSphereColor: {r: 0.9056604, g: 0.11448912, b: 0.11448912, a: 0.76862746}
   wanderOffset: 11.07
   wanderRadius: 4.37
   wanderRate: 61.35
-  showWanderOffset: 1
-  showWanderRadius: 1
 --- !u!114 &377745748
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -526,17 +527,22 @@ MonoBehaviour:
   m_linearResultWeight: 5
   m_angularResultWeight: 1
   m_probability: 1
+  isActive: 1
   showAcceleration: 0
+  accelerationColor: {r: 0, g: 0, b: 0, a: 0}
   showState: 0
   additionalInfo: 
-  isActive: 1
+  showCollisionRay: 0
+  rayColor: {r: 0, g: 0, b: 0, a: 0}
+  hitColor: {r: 0, g: 0, b: 0, a: 0}
+  showCollisionArc: 0
+  arcColor: {r: 0, g: 0, b: 0, a: 0}
   collisionLayer:
     serializedVersion: 2
     m_Bits: 16
   collisionRayStep: 10
   collisionRayRate: 111.73
   collisionRayLength: 5.34
-  showCollisionRay: 0
 --- !u!114 &377745749
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -552,10 +558,11 @@ MonoBehaviour:
   m_linearResultWeight: 1
   m_angularResultWeight: 1
   m_probability: 1
+  isActive: 1
   showAcceleration: 0
+  accelerationColor: {r: 0, g: 0, b: 0, a: 0}
   showState: 0
   additionalInfo: 
-  isActive: 1
   steeringBehaviours:
   - {fileID: 377745748}
   - {fileID: 377745747}
@@ -578,7 +585,7 @@ MonoBehaviour:
   maxAngularAcceleration: 0
   maxAngularSpeed: 0
   m_gravity: -19.6
-  m_lockOnGround: 0
+  m_lockOnGround: 1
   m_yLockOffset: 0
   showLinearVelocity: 0
   showDirection: 0
@@ -595,8 +602,8 @@ CharacterController:
   serializedVersion: 2
   m_Height: 2
   m_Radius: 0.5
-  m_SlopeLimit: 45
-  m_StepOffset: 0.3
+  m_SlopeLimit: 0
+  m_StepOffset: 0.1
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
@@ -678,6 +685,8 @@ MonoBehaviour:
   type: 0
   steeringRoutineTimeStep: 0.02
   m_currentSteering: {fileID: 377745749}
+  m_syncSlope: 1
+  m_planeNormal: {x: 0, y: 1, z: 0}
 --- !u!1 &554218879
 GameObject:
   m_ObjectHideFlags: 0

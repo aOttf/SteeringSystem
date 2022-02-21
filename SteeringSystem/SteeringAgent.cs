@@ -79,6 +79,7 @@ namespace SteeringSystem
             m_cc = GetComponent<CharacterController>();
             m_cc.minMoveDistance = float.Epsilon;
             m_sc = GetComponent<SteeringController>();
+            Physics.autoSyncTransforms = true;
         }
 
         // Start is called before the first frame update
@@ -93,18 +94,6 @@ namespace SteeringSystem
         {
             //Grounded Detection
             m_isGrounded = m_cc.isGrounded;
-            //if (m_isGrounded && m_linearVelocity.y < 0)
-            //{
-            //    m_linearVelocity.y = 0;
-            //}
-            //else if (!m_isGrounded && m_applyGravity)
-            //{
-            //    //Apply Gravity
-            //    m_linearVelocity.y += m_gravity * Time.deltaTime;
-            //}
-
-            ////----------- Debug
-            //m_linearVelocity.y = 0;
 
             //Apply Acceleration
             m_linearVelocity = Vector3.ClampMagnitude(m_linearVelocity + (m_linearAcceleration = m_sc.linearAcceleration) * Time.deltaTime, maxLinearSpeed);
@@ -118,16 +107,18 @@ namespace SteeringSystem
             else if (m_linearVelocity != Vector3.zero)
             {
                 //Sync Face with velocity direction
+                //transform.forward = new Vector3(m_linearVelocity.x, 0, m_linearVelocity.z);
                 transform.forward = m_linearVelocity;
             }
 
-            //Apply Linear Velocity
             if (m_lockOnGround)
             {
-                m_linearVelocity.y = 0;
                 transform.position = new Vector3(transform.position.x, m_yLockOffset, transform.position.z);
+                Physics.SyncTransforms();
+                m_cc.SimpleMove(m_linearVelocity);
             }
-            m_cc.Move((m_linearVelocity + Vector3.up * m_gravity) * Time.deltaTime);
+            else
+                m_cc.Move((m_linearVelocity + up * m_gravity) * Time.deltaTime);
         }
 
         private void OnDrawGizmos()

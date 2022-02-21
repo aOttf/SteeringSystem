@@ -7,14 +7,11 @@ namespace SteeringSystem
 {
     public class Flock : GroupSteeringBehaviour
     {
-        public float radius;
-
         public float seperationWeight;
         public float cohesionWeight;
         public float alignmentWeight;
 
         //Caches
-        protected List<Transform> m_neighbours;
         protected Vector3 m_acceleration;
         protected int m_neighbourCount;
 
@@ -27,16 +24,13 @@ namespace SteeringSystem
         protected override void Awake()
         {
             //Init
-            tagName = "Flock";
             base.Awake();
         }
 
         protected override SteeringOutput GetSteering()
         {
             //Find all neightbours
-            m_neighbours
-                = groupMembers.FindAll(member => member != transform && Vector3.Distance(member.position, transform.position) < radius);
-            m_neighbourCount = m_neighbours.Count;
+            FindNeighbours();
 
             //Seperations
 
@@ -56,23 +50,9 @@ namespace SteeringSystem
             return SteeringOutput.LinearSteering(m_acceleration.normalized * m_maxLinearAcceleration);
         }
 
-        protected override void OnDrawGizmos()
+        protected override void OnDrawGizmosSelected()
         {
-            base.OnDrawGizmos();
-            if (Application.isPlaying)
-            {
-                if (showNeighbours)
-                {
-                    //Draw Neighbour Radius
-                    Gizmos.DrawWireSphere(transform.position, radius);
-
-                    //Draw Lines to Neighbours
-                    foreach (var nei in m_neighbours)
-                    {
-                        Gizmos.DrawLine(transform.position, nei.position);
-                    }
-                }
-            }
+            base.OnDrawGizmosSelected();
         }
     }
 }
