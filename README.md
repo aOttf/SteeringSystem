@@ -22,7 +22,11 @@ https://user-images.githubusercontent.com/49035217/154821679-47f60a56-8202-438c-
 
 https://user-images.githubusercontent.com/49035217/154823019-7fca7f17-5d4c-439f-a271-86a685a46fcc.mp4
 
-#Visual Debuggings
+# Visual Debuggings
+
+![c661ed64404e87c1fd21b523dad57ea](https://user-images.githubusercontent.com/49035217/155060191-9aa30457-75df-48a5-9246-2c01cf2d18b2.png)
+
+> You can easily set up visual debugging options in Inspector window. Under the Gizmos Header.
 
 # How to Use
 
