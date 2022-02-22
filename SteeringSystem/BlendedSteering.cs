@@ -49,8 +49,8 @@ namespace SteeringSystem
                     foreach (var steer in steeringBehaviours)
                     {
                         //Probability Test and Steering Output is not zero
-                        if (UnityEngine.Random.Range(0, 1) > steer.Probability || SteeringOutput.IsZero(res = steer.Steering))
-                            continue;
+                        if (UnityEngine.Random.Range(0, 1) < steer.Probability && !SteeringOutput.IsZero(res = steer.Steering))
+                            break;
 
                         //Otherwise, we pass the probability test and found a nontrivial steering
                     }

@@ -24,7 +24,7 @@ namespace SteeringSystem
                 //Inverse Squart Root
                 m_neighbourStrengths = m_neighbours.
                     ConvertAll
-                    (neighbour => (m_entity.position - neighbour.position) / (m_entity.position - neighbour.position).sqrMagnitude);
+                    (neighbour => (m_entity.position - neighbour.position) / ((m_entity.position - neighbour.position).sqrMagnitude + .001f));
 
                 m_centerOfStrength = new Vector3(m_neighbourStrengths.Average(strength => strength.x), m_neighbourStrengths.Average(strength => strength.y), m_neighbourStrengths.Average(strength => strength.z));
 
