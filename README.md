@@ -2,7 +2,7 @@
 A Steering System consisting of common single and group steering behaviors.
 
 
-# Basic Archetecure
+# Basic Architecture
 ![Class Diagram](https://github.com/aOttf/SteeringSystem/blob/main/PreviewImage/SteeringUML.png)
 
 # Examples
