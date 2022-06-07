@@ -6,6 +6,6 @@ namespace SteeringSystem
 {
     public class Evade : Persue
     {
-        protected override SteeringOutput GetSteering() => -base.GetSteering();
+        protected override Vector3 GetSteering() => -base.GetSteering();
     }
 }

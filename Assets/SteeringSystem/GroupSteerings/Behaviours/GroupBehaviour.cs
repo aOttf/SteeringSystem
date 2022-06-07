@@ -11,21 +11,13 @@ namespace SteeringSystem
     /// </summary>
     public abstract class GroupSteeringBehaviour : SteeringBehaviour
     {
-        #region Debug Options
+        #region GroupSteering Gizmos
 
+        [Header("GroupSteering Gizmos")]
         public bool showNeighbours;
         public Color neighbourSphereColor;
 
-        #endregion Debug Options
-
-        public static Dictionary<string, List<ISphereMoveable>> tagGroups = new Dictionary<string, List<ISphereMoveable>>();
-
-        [Space(50)]
-        public float radius;
-        public string tagName = "GroupSteer";
-
-        //Cache
-        protected List<ISphereMoveable> m_neighbours = new List<ISphereMoveable>();
+        #endregion GroupSteering Gizmos
 
         protected override void Awake()
         {
@@ -55,18 +47,18 @@ namespace SteeringSystem
             if (Application.isPlaying)
             {
                 //Show Neighbours
-                if (showNeighbours && m_neighbours.Count != 0)
+                if (showNeighbours)
                 {
                     //Gizmos.DrawIcon(m_entity.position, "Fuck Unity Fuck Fuck Fuck Trash GUIs Trash APIs ");
                     //Draw Neighbour Radius
                     Gizmos.color = neighbourSphereColor;
-                    Gizmos.DrawWireSphere(m_entity.position, radius);
+                    //Gizmos.DrawWireSphere(m_entity.position, m_manager.QueryRadius);
 
-                    //Draw Lines to Neighbours
-                    foreach (var nei in m_neighbours)
-                    {
-                        Gizmos.DrawLine(m_entity.position, nei.position);
-                    }
+                    ////Draw Lines to Neighbours
+                    //foreach (var nei in m_neighbours)
+                    //{
+                    // Gizmos.DrawLine(m_entity.position, nei.position);
+                    //}
                 }
             }
         }

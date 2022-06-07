@@ -18,7 +18,7 @@ namespace SteeringSystem
         /// <param name="A">Collision Entity</param>
         /// <param name="B">Another Collision Entity</param>
         /// <returns></returns>
-        protected float Time2Collision(ISphereMoveable A, ISphereMoveable B)
+        protected float Time2Collision(SteerAgent A, SteerAgent B)
         {
             //Variables
             float sumRadius = A.radius + B.radius;
@@ -43,7 +43,7 @@ namespace SteeringSystem
             return time;
         }
 
-        protected override void GroupSteering(ISphereMoveable a, ISphereMoveable b)
+        protected override void GroupSteering(SteerAgent a, SteerAgent b)
         {
             float colTime = Time2Collision(a, b);
             if (colTime < time2Predict)
@@ -55,7 +55,7 @@ namespace SteeringSystem
                 //if (180f - Vector3.Angle(dir, A.linearVelocity) < float.Epsilon)
                 //    dir = Quaternion.AngleAxis(deviationAngle, transform.up) * dir;
 
-                Vector3 res = dir * a.MaxLinearAcceleration * (time2Predict - colTime) / (colTime + .1f);
+                Vector3 res = dir * (time2Predict - colTime) / (colTime + .1f);
                 a[GroupBehaviour.CollisionAvoidance] += res;
                 b[GroupBehaviour.CollisionAvoidance] -= res;
             }

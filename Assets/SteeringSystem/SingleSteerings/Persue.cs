@@ -11,43 +11,29 @@ namespace SteeringSystem
         public float angle2Predict = 30f; //Max Signed Angle Degree to Ignore the Prediction
 
         public MatchMode mode = MatchMode.MatchPosition;
-        [SerializeField] protected IMoveable m_target;
-        public IMoveable Target { get => m_target; set => m_target = value; }
+        [SerializeField] public SteerAgent target;
 
-        protected override SteeringOutput GetSteering()
+        protected override Vector3 GetSteering()
         {
             //angle btw agent and target's velocity
-            float angle = Vector3.Angle(m_target.linearVelocity, m_entity.linearVelocity);
+            float angle = Vector3.Angle(target.linearVelocity, m_entity.linearVelocity);
 
             //If the angle falls in the threshold, same as seek
             if (angle < angle2Predict || angle > 180f - angle2Predict)
-                m_targetPosition = Target.position;
+                m_targetPosition = target.position;
 
             //else, predict the target's next position and seek to that
             //Predict the position of the target
-            float agentSpd = m_entity.linearVelocity.magnitude;
-            float dist = (Target.position - m_entity.position).magnitude;
-            float agentPredTime = dist / agentSpd;
-            float predTime = (agentPredTime < time2Predict) ? Mathf.Sqrt(agentPredTime) : time2Predict;
-            m_targetPosition = Target.position + predTime * Target.linearVelocity;
-
-            //Seek to the final position
-            return PersueTo(m_targetPosition);
-        }
-
-        protected SteeringOutput PersueTo(Vector3 pTarget)
-        {
-            switch (mode)
+            else
             {
-                case MatchMode.MatchPosition:
-                    return MatchPosition(pTarget, m_entity.position, m_maxLinearAcceleration);
-
-                case MatchMode.MatchVelocity:
-                    return MatchVelocity((pTarget - m_entity.position) * m_maxLinearAcceleration, m_entity.linearVelocity, m_maxLinearAcceleration);
-
-                default:
-                    throw new System.NotImplementedException();
+                float agentSpd = m_entity.linearVelocity.magnitude;
+                float dist = (target.position - m_entity.position).magnitude;
+                float agentPredTime = dist / agentSpd;
+                float predTime = (agentPredTime < time2Predict) ? Mathf.Sqrt(agentPredTime) : time2Predict;
+                m_targetPosition = target.position + predTime * target.linearVelocity;
             }
+            //Seek to the final position
+            return m_entity.maxLinearSpeed * (m_targetPosition - m_entity.position).normalized;
         }
     }
 }

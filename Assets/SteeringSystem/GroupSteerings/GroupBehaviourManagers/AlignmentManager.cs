@@ -12,10 +12,10 @@ namespace SteeringSystem
             m_groupBehaviourIndex = GroupBehaviour.Alignment;
         }
 
-        protected override void GroupSteering(ISphereMoveable a, ISphereMoveable b)
+        protected override void GroupSteering(SteerAgent a, SteerAgent b)
         {
-            a[m_groupBehaviourIndex] += a.MaxLinearAcceleration * (b.forward * a.linearVelocity.magnitude - a.linearVelocity);
-            b[m_groupBehaviourIndex] += b.MaxLinearAcceleration * (a.forward * b.linearVelocity.magnitude - b.linearVelocity);
+            a[m_groupBehaviourIndex] += b.forward;
+            b[m_groupBehaviourIndex] += a.forward;
         }
     }
 }

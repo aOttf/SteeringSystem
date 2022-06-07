@@ -7,7 +7,7 @@ namespace SteeringSystem
 {
     public class BlendedSteering : SteeringBehaviour
     {
-        [Space(50)]
+        [Header("Blended Params")]
         public List<SteeringBehaviour> steeringBehaviours;
         public CombineMethod method = CombineMethod.WeightedTruncated;
 
@@ -32,9 +32,10 @@ namespace SteeringSystem
 
         #endregion Add&Remove
 
-        protected override SteeringOutput GetSteering()
+        protected override Vector3 GetSteering()
         {
-            var res = SteeringOutput.ZeroSteering;
+            m_steerSelected = null;
+            var res = Vector3.zero;
 
             switch (method)
             {
@@ -47,7 +48,7 @@ namespace SteeringSystem
                     foreach (var steer in steeringBehaviours)
                     {
                         //If we encounter a steering behavior that doesn't output zero, stop
-                        if (!SteeringOutput.IsZero(res = steer.Steering))
+                        if ((res = steer.Steering) != Vector3.zero)
                         {
                             m_steerSelected = steer;
                             break;
@@ -60,7 +61,7 @@ namespace SteeringSystem
                     foreach (var steer in steeringBehaviours)
                     {
                         //Probability Test and Steering Output is not zero
-                        if (UnityEngine.Random.Range(0, 1) < steer.Probability && !SteeringOutput.IsZero(res = steer.Steering))
+                        if (UnityEngine.Random.Range(0, 1) < steer.Probability && (res = steer.Steering) != Vector3.zero)
                         {
                             m_steerSelected = steer;
                             break;
@@ -77,16 +78,20 @@ namespace SteeringSystem
         {
             if (method == CombineMethod.WeightedTruncated)
                 base.OnDrawGizmosSelected();
-            else if (Application.isPlaying)
+            else if (showGizmos && Application.isPlaying)
             {
                 if (showState)
                 {
-                    if (!SteeringOutput.IsZero(m_result))
-                        Handles.Label(m_entity.position, m_steerSelected.ToString() + additionalInfo);
+                    if (m_steerSelected)
+                        Handles.Label(m_entity.position, m_steerSelected.steerTag);
+
+                    if (showTargetVelocity)
+                    {
+                        Gizmos.color = targetVelocityColor;
+                        Gizmos.DrawRay(m_entity.position, m_targetVelocity);
+                    }
                 }
             }
         }
-
-        public override string ToString() => base.ToString() + string.Join("+", steeringBehaviours.ConvertAll(steer => steer.ToString()));
     }
 }

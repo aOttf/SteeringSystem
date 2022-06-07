@@ -7,23 +7,17 @@ namespace SteeringSystem
 {
     public class CohesionManager : GroupBehaviourManager
     {
-        #region Caches
-
-        private Vector3 m_acce;
-
-        #endregion Caches
-
         protected override void Awake()
         {
             base.Awake();
             m_groupBehaviourIndex = GroupBehaviour.Cohesion;
         }
 
-        protected override void GroupSteering(ISphereMoveable a, ISphereMoveable b)
+        protected override void GroupSteering(SteerAgent a, SteerAgent b)
         {
-            m_acce = b.position - a.position;
-            a[GroupBehaviour.Cohesion] += m_acce;
-            b[GroupBehaviour.Cohesion] -= m_acce;
+            Vector3 ab = b.position - a.position;
+            a[GroupBehaviour.Cohesion] += ab;
+            b[GroupBehaviour.Cohesion] -= ab;
         }
     }
 }

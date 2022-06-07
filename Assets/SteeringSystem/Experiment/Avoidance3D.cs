@@ -6,7 +6,7 @@ namespace SteeringSystem
 {
     public class Avoidance3D : SteeringBehaviour
     {
-        protected override SteeringOutput GetSteering()
+        protected override Vector3 GetSteering()
         {
             throw new System.NotImplementedException();
         }

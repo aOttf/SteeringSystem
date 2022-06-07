@@ -12,7 +12,7 @@ namespace SteeringSystem
             m_groupBehaviourIndex = GroupBehaviour.Seperation;
         }
 
-        protected override void GroupSteering(ISphereMoveable a, ISphereMoveable b)
+        protected override void GroupSteering(SteerAgent a, SteerAgent b)
         {
             Vector3 ba = a.position - b.position;
             Vector3 acce = ba / (ba.sqrMagnitude + .001f);

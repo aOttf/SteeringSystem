@@ -9,6 +9,6 @@ namespace SteeringSystem
     /// </summary>
     public class Wander3D : SteeringBehaviour
     {
-        protected override SteeringOutput GetSteering() => throw new System.NotImplementedException();
+        protected override Vector3 GetSteering() => throw new System.NotImplementedException();
     }
 }

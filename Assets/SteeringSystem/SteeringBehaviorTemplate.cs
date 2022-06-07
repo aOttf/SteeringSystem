@@ -6,6 +6,8 @@ using UnityEditor;
 
 namespace SteeringSystem
 {
+    #region LEGACY
+
     /// <summary>
     /// Linear Acceleration and Angular Acceleration
     /// </summary>
@@ -87,6 +89,8 @@ namespace SteeringSystem
         public static SteeringOutput AngularSteering(float pAngular) => new SteeringOutput(default, pAngular);
     }
 
+    #endregion LEGACY
+
     /// <summary>
     /// The method blendedSteering used to combine steering behaviour outputs
     /// </summary>
@@ -96,7 +100,6 @@ namespace SteeringSystem
     /// <summary>
     /// SteeringBehaviour is the base class from which every concrete Steering Behaviour Script derives
     /// </summary>
-    [RequireComponent(typeof(SteeringController))]
     public abstract class SteeringBehaviour : MonoBehaviour
     {
         //[Tooltip("This is the name of the steering behaviour set manually used to store and access through a dictionary.\n If it hasn't been set, it will be initialized as the class name.\n" +
@@ -106,14 +109,16 @@ namespace SteeringSystem
 
         #region Caches
 
-        protected ISphereMoveable m_entity;
+        protected SteerAgent m_entity;
 
-        protected float m_maxLinearAcceleration;
-        protected float m_maxLinearSpeed;
-        protected float m_maxAngularAcceleration;
-        protected float m_maxAngularSpeed;
+        //protected float m_maxLinearAcceleration;
+        //protected float m_maxLinearSpeed;
+        //protected float m_maxAngularAcceleration;
+        //protected float m_maxAngularSpeed;
 
         protected SteeringOutput m_result;
+
+        protected Vector3 m_targetVelocity;
 
         #endregion Caches
 
@@ -122,11 +127,11 @@ namespace SteeringSystem
         [Tooltip("Multiplier of the result of the linear acceleration")]
         [SerializeField] protected float m_linearResultWeight = 1f;
 
-        [Tooltip("Multiplier of the result of the angular acceleration")]
-        [SerializeField] protected float m_angularResultWeight = 1f;
+        //  [Tooltip("Multiplier of the result of the angular acceleration")]
+        //[SerializeField] protected float m_angularResultWeight = 1f;
 
         public float LinearResultWeight => m_linearResultWeight;
-        public float AngularResultWeight => m_angularResultWeight;
+        //public float AngularResultWeight => m_angularResultWeight;
 
         #endregion Weight Variables
 
@@ -141,40 +146,44 @@ namespace SteeringSystem
         [Tooltip("Is the steering behaviour currently active")]
         public bool isActive = true;
 
+        #region Gizmos
+
+        [Header("Gizmos")]
+        public bool showGizmos;
+
+        [Tooltip("Shows the target velocity of the steering")]
+        public bool showTargetVelocity;
+        public Color targetVelocityColor;
+
+        [Tooltip("Shows Tag of the Steering Behaviour.")]
+        public bool showState;
+
         [Tooltip("Steer Tag of the behavior")]
         public string steerTag = "Steering";
 
-        #region Debug Options
-
-        [Header("Gizmos")]
-        public bool showAcceleration;
-        public Color accelerationColor;
-        public bool showState;
-
-        [Tooltip("Additional Information shown for Debugging")]
-        public string additionalInfo = "";
-
-        #endregion Debug Options
+        #endregion Gizmos
 
         protected virtual void Awake()
         {
             //Init Components
-            m_entity = GetComponent<ISphereMoveable>();
+            m_entity = GetComponent<SteerAgent>();
         }
 
         protected virtual void Start()
         {
             //Init velocity variables
-            m_maxLinearAcceleration = m_entity.MaxLinearAcceleration;
-            m_maxAngularAcceleration = m_entity.MaxAngularAcceleration;
-            m_maxLinearSpeed = m_entity.MaxLinearSpeed;
-            m_maxAngularSpeed = m_entity.MaxAngularSpeed;
+            //m_maxLinearAcceleration = m_entity.MaxLinearAcceleration;
+            //m_maxAngularAcceleration = m_entity.MaxAngularAcceleration;
+            //m_maxLinearSpeed = m_entity.maxLinearSpeed;
+            //m_maxAngularSpeed = m_entity.MaxAngularSpeed;
         }
 
         /// <summary>
         /// Steering Output
         /// </summary>
-        public SteeringOutput Steering => m_result = isActive ? Multiply(GetSteering()) : SteeringOutput.ZeroSteering;
+       // public SteeringOutput Steering => m_result = isActive ? Multiply(GetSteering()) : SteeringOutput.ZeroSteering;
+
+        public Vector3 Steering => m_targetVelocity = isActive ? GetSteering() * m_linearResultWeight : Vector3.zero;
 
         public SteeringBehaviour GetSteeringBehaviour<T>() where T : SteeringBehaviour
         {
@@ -186,25 +195,26 @@ namespace SteeringSystem
             return GetComponents<SteeringBehaviour>();
         }
 
-        protected abstract SteeringOutput GetSteering();
+        // protected abstract SteeringOutput GetSteering();
 
-        protected SteeringOutput Multiply(SteeringOutput pOutput) =>
-            new SteeringOutput(pOutput.Linear * m_linearResultWeight, pOutput.Angular * m_angularResultWeight);
+        protected abstract Vector3 GetSteering();
+
+        //protected SteeringOutput Multiply(SteeringOutput pOutput) =>
+        // new SteeringOutput(pOutput.Linear * m_linearResultWeight, pOutput.Angular * m_angularResultWeight);
 
         protected virtual void OnDrawGizmosSelected()
         {
-            if (Application.isPlaying)
+            if (showGizmos && Application.isPlaying)
             {
                 if (showState)
                 {
-                    if (!SteeringOutput.IsZero(m_result))
-                        Handles.Label(m_entity.position, GetType().ToString() + additionalInfo);
+                    Handles.Label(m_entity.position, steerTag);
                 }
 
-                if (showAcceleration)
+                if (showTargetVelocity)
                 {
-                    Gizmos.color = accelerationColor;
-                    Gizmos.DrawLine(m_entity.position, m_entity.position + m_result.Linear);
+                    Gizmos.color = targetVelocityColor;
+                    Gizmos.DrawRay(m_entity.position, m_targetVelocity);
                 }
             }
         }

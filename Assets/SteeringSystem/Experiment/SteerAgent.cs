@@ -7,6 +7,14 @@ using UnityEngine;
 
 namespace SteeringSystem
 {
+    /// <summary>
+    /// The Update timestep
+    /// </summary>
+    public enum UpdateType
+    {
+        Update, FixedUpdate, TimeStep
+    }
+
     [RequireComponent(typeof(CharacterController))]
     public class SteerAgent : MonoBehaviour
     {
@@ -14,22 +22,17 @@ namespace SteeringSystem
 
         #region Components
 
-        private CharacterController m_cc;
+        protected CharacterController m_cc;
 
         #endregion Components
 
         #region Steering
 
-        private float m_turnAroundSpeed;    //Caches the max turn around speed in rad/s
-        private SteeringOutput m_acce;  //Caches the last steering output received
-        private Vector3 m_targetLinearVelocity = default; //Caches the target velocity per  frame
-        private Vector3 m_linearVelocity = default;   //Current linear velocity of the agent
-        private float m_angularVelocity = default;  //Current angular velocity of the agent
-        private bool m_isControlled = default;  // Is the agent is manually controlled by player
-        private bool m_isGrounded = default;
+        protected Vector3 m_desiredVelocity = default; //Caches the target velocity per  frame
+        protected Vector3 m_velocity = default;   //Current linear velocity of the agent
 
-        private List<SteeringBehaviour> m_steers;
-        private SteeringOutput[] m_groupBehaviourOutputCaches = new SteeringOutput[Enum.GetValues(typeof(GroupBehaviour)).Cast<int>().Last<int>()];
+        protected List<SteeringBehaviour> m_steers;
+        protected Vector3[] m_groupBehaviourOutputCaches = new Vector3[Enum.GetValues(typeof(GroupBehaviour)).Cast<int>().Last<int>() + 1];
 
         #endregion Steering
 
@@ -42,15 +45,25 @@ namespace SteeringSystem
         public float radius;
 
         [Header("Steering")]
-        [Tooltip("The facing of the agent is always synced with the direction of velocity")]
-        public bool lookWhereToGo = true;
+        // [Tooltip("The facing of the agent is always synced with the direction of velocity")]
+        // public bool lookWhereToGo = true;
 
         [Header("Turn Around")]
         [Tooltip("Apply turn around speed restriction to linear velocity")]
-        public bool turnSpeedRestrict = false;
+        public bool turnSpeedRestrict = true;
 
         [Tooltip("Max speed of direction of linear velocity in deg/s")]
         public float maxTurnAroundSpeed = 1f;
+
+        [Tooltip("Stop steering and start looking at the target. By default the target is the agent's current forward direction. Stop the agent by setting it to true.")]
+        public bool lookAt = false;
+        [SerializeField] protected Transform m_lookAtTarget = null;
+
+        public void SetLookAt(bool islookAt, Transform target = null)
+        {
+            lookAt = islookAt;
+            m_lookAtTarget = target;
+        }
 
         [Space(10)]
         [Tooltip("Max Linear Acceleration of the agent")]
@@ -59,22 +72,15 @@ namespace SteeringSystem
         [Tooltip("Max Linear Speed of the agent")]
         public float maxLinearSpeed;
 
-        [Header("Angular")]
-        [Tooltip("Max Angular Acceleration of the agent")]
-        public float maxAngularAcceleration;
-
-        [Tooltip("Max Angular Speed of the agent")]
-        public float maxAngularSpeed;
-
         [Tooltip("The Gravity applied to the agent")]
-        [SerializeField] private float m_gravity = -19.6f;
+        [SerializeField] protected float m_gravity = -19.6f;
 
         [Tooltip("Is the agent lock on ground")]
-        [SerializeField] private bool m_lockOnGround = default;
-        [SerializeField] private float m_yLockOffset = 0f;
+        [SerializeField] protected bool m_lockOnGround = default;
+        [SerializeField] protected float m_yLockOffset = 0f;
 
         [Tooltip("Current Steering Behaviour")]
-        [SerializeField] private SteeringBehaviour m_currentSteer;
+        [SerializeField] protected SteeringBehaviour m_currentSteer;
 
         [Tooltip("Update Method")]
         public UpdateType type = UpdateType.Update;
@@ -82,11 +88,11 @@ namespace SteeringSystem
         [Tooltip("How often does steering behaviour be executed if the Update Method is TimeStep")]
         public float steeringRoutineTimeStep = .02f;
 
-        [SerializeField] private bool m_syncSlope;
+        [SerializeField] protected bool m_syncSlope;
 
-        [SerializeField] private Vector3 m_planeNormal;
+        [SerializeField] protected Vector3 m_planeNormal;
 
-        [Header("Gizmos")]
+        [Header("Steer Agent Gizmos")]
         public bool showLinearVelocity;
         public bool showDirection;
 
@@ -95,10 +101,12 @@ namespace SteeringSystem
         #region Transform
 
         public Vector3 linearVelocity
-        { get => m_linearVelocity; set { m_linearVelocity = value; m_isControlled = true; } }
+        { get => m_velocity; set => m_velocity = value; }
 
-        public float angularVelocity
-        { get => m_angularVelocity; set { m_angularVelocity = value; m_isControlled = true; } }
+        public Vector3 desiredVelocity
+        {
+            get => m_desiredVelocity; set => m_desiredVelocity = value;
+        }
 
         public Vector3 position => transform.position;
 
@@ -113,17 +121,18 @@ namespace SteeringSystem
         public SteeringBehaviour GetSteeringBehaviour(string pSteerTag) => m_steers.FirstOrDefault<SteeringBehaviour>(st => string.Equals(st.steerTag, pSteerTag));
 
         public SteeringBehaviour CurrentSteer { get => m_currentSteer; set => m_currentSteer = value; }
-        public SteeringOutput this[GroupBehaviour behaviour] { get => m_groupBehaviourOutputCaches[(int)behaviour]; set => m_groupBehaviourOutputCaches[(int)behaviour] = value; }
+        public Vector3 this[GroupBehaviour behaviour] { get => m_groupBehaviourOutputCaches[(int)behaviour]; set => m_groupBehaviourOutputCaches[(int)behaviour] = value; }
 
         #endregion Steering
 
-        private void Awake()
+        protected virtual void Awake()
         {
             //Components
             m_cc = GetComponent<CharacterController>();
             m_cc.radius = radius;
             m_cc.height = height;
             m_cc.minMoveDistance = float.Epsilon;
+            m_cc.detectCollisions = false;
             Physics.autoSyncTransforms = true;
 
             //Steers
@@ -132,45 +141,32 @@ namespace SteeringSystem
         }
 
         // Start is called before the first frame update
-        private void Start()
+        protected void Start()
         {
-            StartSteering();
+            //StartSteering();
         }
 
         /// <summary>
         /// Update the Agent's Current Linear Velocity
         /// </summary>
-        private void UpdateLinearVelocity()
+        protected void UpdateLinearVelocity()
         {
             //Calculate target velocity
-            m_targetLinearVelocity = Vector3.ClampMagnitude(m_linearVelocity + m_acce.Linear * Time.deltaTime, maxLinearSpeed);
-
-            ////Implementation1 : If turnAround restricting, Clamp rotating angle
-            //if (turnSpeedRestrict)
-            //    m_linearVelocity = Vector3.RotateTowards(m_linearVelocity, m_targetLinearVelocity, Time.deltaTime * Mathf.PI * maxTurnAroundSpeed / 180f, maxLinearAcceleration * Time.deltaTime);
-            //else
-            //    m_linearVelocity = Vector3.ClampMagnitude(m_linearVelocity + m_acce.Linear * Time.deltaTime, maxLinearSpeed);
-
-            //Implementation2 : Target Velocity
+            float acceDelta = maxLinearAcceleration * Time.deltaTime;
             if (turnSpeedRestrict)
-                m_linearVelocity = Vector3.RotateTowards(m_linearVelocity, m_acce.Linear, Time.deltaTime * Mathf.PI * maxTurnAroundSpeed / 180f, maxLinearAcceleration * Time.deltaTime);
+            {
+                float cosine = Vector3.Dot(m_velocity.normalized, m_desiredVelocity.normalized);
+                cosine += 1;
+                m_velocity = Vector3.RotateTowards(m_velocity + forward * .0001f, m_desiredVelocity * ((cosine + .0001f) / 2), Time.deltaTime * Mathf.PI * maxTurnAroundSpeed / 180f, maxLinearAcceleration * Time.deltaTime);
+            }
             else
-                m_linearVelocity = m_acce.Linear;
-        }
-
-        /// <summary>
-        /// Update the Agent's Current Angular Velocity
-        /// </summary>
-        private void UpdateAngularVelocity()
-        {
-            //Calculate target velocity
-            m_angularVelocity = Mathf.Min(m_angularVelocity + m_acce.Angular * Time.deltaTime, maxAngularSpeed);
+                m_velocity = m_desiredVelocity;
         }
 
         /// <summary>
         ///
         /// </summary>
-        private void UpdatePosition()
+        protected void UpdatePosition()
         {
             //Move
             if (m_lockOnGround)
@@ -179,52 +175,50 @@ namespace SteeringSystem
                 transform.position = new Vector3(transform.position.x, m_yLockOffset, transform.position.z);
                 Physics.SyncTransforms();
 
-                m_cc.SimpleMove(m_linearVelocity);
+                m_cc.SimpleMove(m_velocity);
             }
             else
             {
                 //Not Locked on ground, apply gravity to the move
-                m_cc.Move((m_linearVelocity + up * m_gravity) * Time.deltaTime);
+                m_cc.Move((m_velocity + up * m_gravity) * Time.deltaTime);
             }
         }
 
         /// <summary>
         /// Update the facing direction of the agent
         /// </summary>
-        private void UpdateFace()
+        protected void UpdateFace()
         {
-            if (lookWhereToGo && m_linearVelocity != Vector3.zero)
-                transform.forward = m_linearVelocity;
-            else if (!lookWhereToGo)
-                transform.forward = Quaternion.AngleAxis(m_angularVelocity * Time.deltaTime, up) * transform.forward;
+            if (m_velocity != Vector3.zero)
+                transform.forward = m_velocity;
         }
 
         // Update is called once per frame
-        private void Update()
+        protected void Update()
         {
-            //If not manually controlled by others
-            if (!m_isControlled)
+            if (!lookAt)
             {
+                //If not manually controlled by others
                 //Update Linear Velocity
                 UpdateLinearVelocity();
 
                 //If LookWhere2Go
                 //Update angular velocity
-                if (!lookWhereToGo)
-                    UpdateAngularVelocity();
+                // if (!lookWhereToGo)
+                //     UpdateAngularVelocity();
+
+                UpdatePosition(); UpdateFace();
+                //If Where2Go
+                //Sync forward with linear vel
+
+                //If !lookWheretogo, Rotate
+
+                //Grounded Detection
+                //m_isGrounded = m_cc.isGrounded;
             }
-
-            UpdatePosition(); UpdateFace();
-            //If Where2Go
-            //Sync forward with linear vel
-
-            //If !lookWheretogo, Rotate
-
-            //Grounded Detection
-            m_isGrounded = m_cc.isGrounded;
         }
 
-        private void OnDrawGizmos()
+        protected void OnDrawGizmos()
         {
             //Direction of the Agent
             if (showDirection)
@@ -249,50 +243,37 @@ namespace SteeringSystem
         /// </summary>
         public void StartSteering()
         {
-            if (m_isControlled)
-            {
-                ClearSteeringData();
-                StartCoroutine(nameof(SteeringCoroutine));
-                m_isControlled = false;
-            }
+            ClearSteeringData();
+            StartCoroutine(nameof(SteeringCoroutine));
         }
 
         /// <summary>
         /// Clean the old steering output data and stop steering routine
         /// </summary>
-        public void StopSteering()
+        public void StopSteering(bool clearSteeringData)
         {
-            ClearSteeringData();
-            PauseSteering();
-        }
+            if (clearSteeringData)
+                ClearSteeringData();
 
-        /// <summary>
-        /// pause steering routine but does not clean the old data
-        /// </summary>
-        public void PauseSteering()
-        {
-            if (!m_isControlled)
-            {
-                StopCoroutine(nameof(SteeringCoroutine));
-                m_isControlled = true;
-            }
+            StopCoroutine(nameof(SteeringCoroutine));
         }
 
         /// <summary>
         /// cleans the result from the steering behaivour executed in the last time
         /// </summary>
-        private void ClearSteeringData()
+        protected void ClearSteeringData()
         {
-            m_acce = SteeringOutput.ZeroSteering;
+            m_desiredVelocity = Vector3.zero;
             for (int i = 0; i < m_groupBehaviourOutputCaches.Length; i++)
-                m_groupBehaviourOutputCaches[i] = default;
+                m_groupBehaviourOutputCaches[i] = Vector3.zero;
         }
 
-        private IEnumerator SteeringCoroutine()
+        protected IEnumerator SteeringCoroutine()
         {
             while (true)
             {
-                m_acce = SteeringOutput.Clip(m_currentSteer.Steering, maxLinearAcceleration, maxAngularAcceleration);
+                m_desiredVelocity = Vector3.Lerp(m_desiredVelocity, Vector3.ClampMagnitude(m_currentSteer.Steering, maxLinearSpeed), .4f);
+                m_desiredVelocity.y = 0;
                 //if (m_syncSlope)
                 //    m_acce.Linear = Vector3.ProjectOnPlane(m_acce.Linear, m_planeNormal);
 
@@ -311,6 +292,36 @@ namespace SteeringSystem
                         yield return new WaitForSeconds(steeringRoutineTimeStep);
                         break;
                 }
+            }
+        }
+
+        public virtual void OnControlEnter(bool clearSteeringData)
+        {
+            StopSteering(clearSteeringData);
+        }
+
+        public virtual void OnControlExit()
+        {
+            StartSteering();
+        }
+
+        /// <summary>
+        /// Stop current steering and Start Looking at the target
+        /// </summary>
+        /// <param name="pos"></param>
+        public void SetLookAt(Vector3 target)
+        {
+            Vector3 dir = target - position;
+            float sangle = Vector3.SignedAngle(forward, dir, up);
+            float turnAroundDelta = maxTurnAroundSpeed * Time.deltaTime;
+
+            if (sangle > turnAroundDelta)
+            {
+                transform.forward = Quaternion.AngleAxis(turnAroundDelta, up) * forward;
+            }
+            else
+            {
+                transform.forward = dir;
             }
         }
     }

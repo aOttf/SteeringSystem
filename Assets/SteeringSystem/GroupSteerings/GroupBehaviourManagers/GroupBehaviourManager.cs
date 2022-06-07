@@ -1,17 +1,23 @@
-using System;
+using System.Text;
 using System.Linq;
 using System.Collections;
+
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace SteeringSystem
 {
+    public enum GroupBehaviour
+    {
+        CollisionAvoidance, Alignment, Cohesion, Seperation, Flock
+    }
+
     public abstract class GroupBehaviourManager : MonoBehaviour
     {
         //Contains all set of groups seperated by group tag
-        public static Dictionary<string, List<ISphereMoveable>> tagGroups = new Dictionary<string, List<ISphereMoveable>>();
+        public static Dictionary<string, List<SteerAgent>> tagGroups = new Dictionary<string, List<SteerAgent>>();
 
-        private Dictionary<(int x, int y), List<ISphereMoveable>> m_groupMembers = new Dictionary<(int x, int y), List<ISphereMoveable>>();
+        private Dictionary<(int x, int y), List<SteerAgent>> m_groupMembers = new Dictionary<(int x, int y), List<SteerAgent>>();
 
         [Header("Gizmos Options")]
         public bool drawGizmos;
@@ -32,15 +38,23 @@ namespace SteeringSystem
 
         #region Caches
 
-        private int m_rows;
-        private int m_cols;
         private float m_sqrRadius;
 
-        private List<KeyValuePair<(int x, int y), ISphereMoveable>> m_backupMembers = new List<KeyValuePair<(int x, int y), ISphereMoveable>>();    //This is used to store members whose new grid indexes are not present in the dictionary
+        private List<KeyValuePair<(int x, int y), SteerAgent>> m_backupMembers = new List<KeyValuePair<(int x, int y), SteerAgent>>();    //This is used to store members whose new grid indexes are not present in the dictionary
 
         protected GroupBehaviour m_groupBehaviourIndex; //Delegated Group Behaviour Index
 
         #endregion Caches
+
+        public float QueryRadius
+        {
+            get => m_radius;
+            set
+            {
+                m_radius = value;
+                //Update Caches
+            }
+        }
 
         protected virtual void Awake()
         {
@@ -48,14 +62,14 @@ namespace SteeringSystem
             if (!tagGroups.ContainsKey(m_groupTag))
                 tagGroups.Add(m_groupTag,
                     GameObject.FindGameObjectsWithTag(m_groupTag).ToList<GameObject>().
-                    ConvertAll<ISphereMoveable>(obj => obj.GetComponent<ISphereMoveable>()));
+                    ConvertAll(obj => obj.GetComponent<SteerAgent>()));
 
             m_groupMembers.EnsureCapacity(m_gridBucketCapacity);
 
             //Initialization
-            List<ISphereMoveable> members =
+            List<SteerAgent> members =
                 GameObject.FindGameObjectsWithTag(m_groupTag).ToList<GameObject>()
-                .ConvertAll<ISphereMoveable>(gameObj => gameObj.GetComponent<ISphereMoveable>());
+                .ConvertAll(gameObj => gameObj.GetComponent<SteerAgent>());
 
             foreach (var member in members)
             {
@@ -110,7 +124,7 @@ namespace SteeringSystem
             /// </summary>
             void ClearEmptyCaches()
             {
-                IEnumerable<KeyValuePair<(int x, int y), List<ISphereMoveable>>> tmp
+                IEnumerable<KeyValuePair<(int x, int y), List<SteerAgent>>> tmp
                     = m_groupMembers.Where(kv => kv.Value.Count == 0).ToArray();
 
                 foreach (var pair in tmp)
@@ -122,9 +136,9 @@ namespace SteeringSystem
             {
                 (int x, int y) curIdx = pair.Key;
                 (int x, int y) nextIdx;
-                List<ISphereMoveable> curMembers = pair.Value;
-                List<ISphereMoveable> nextGrid;
-                ISphereMoveable curMember;
+                List<SteerAgent> curMembers = pair.Value;
+                List<SteerAgent> nextGrid;
+                SteerAgent curMember;
 
                 int cnt = 0;
                 while (cnt < curMembers.Count)
@@ -132,7 +146,7 @@ namespace SteeringSystem
                     curMember = curMembers[cnt];
 
                     //Clear group behaviour output
-                    curMember[m_groupBehaviourIndex] = SteeringOutput.ZeroSteering;
+                    curMember[m_groupBehaviourIndex] = Vector3.zero;
                     //In the same grid
                     if ((nextIdx = World2Grid(curMember.position)) == curIdx)
                     {
@@ -140,14 +154,14 @@ namespace SteeringSystem
                         continue;
                     }
 
-                    WrapperListRemoveAt<ISphereMoveable>(curMembers, cnt);
+                    WrapperListRemoveAt<SteerAgent>(curMembers, cnt);
                     //If the new grid exists in the dictionary, add it in
                     if (m_groupMembers.TryGetValue(nextIdx, out nextGrid))
                         nextGrid.Add(curMember);
                     else
                     {
                         //Add it to the temporary backup list
-                        m_backupMembers.Add(new KeyValuePair<(int x, int y), ISphereMoveable>(nextIdx, curMember));
+                        m_backupMembers.Add(new KeyValuePair<(int x, int y), SteerAgent>(nextIdx, curMember));
                     }
                 }
             }
@@ -174,69 +188,60 @@ namespace SteeringSystem
             foreach (var pair in m_groupMembers)
             {
                 (int row, int col) curIdx = pair.Key;
-                List<ISphereMoveable> curMembers = pair.Value;
+                List<SteerAgent> curMembers = pair.Value;
 
                 for (int i = 0; i < curMembers.Count; i++)
                 {
-                    ISphereMoveable curMember = curMembers[i];
+                    SteerAgent curMember = curMembers[i];
 
                     //Query members in bottom neighbour grids
-                    if (curIdx.row < m_rows - 1)
-                    {
-                        //Only if the grid is currently registered in the dictionary. I.E. there're members currently in the neighbouring grid
-                        if (m_groupMembers.ContainsKey((curIdx.row + 1, curIdx.col)))
-                            //Perfrom Steering
-                            foreach (var nei in m_groupMembers[(curIdx.row + 1, curIdx.col)])
-                            {
-                                if (Vector3.SqrMagnitude(nei.position - curMember.position) < m_sqrRadius)
-                                {
-                                    GroupSteering(curMember, nei);
-                                }
-                            }
-
-                        //Query members in bottom-right neighbour grid
-                        if (curIdx.col < m_cols - 1)
+                    //Only if the grid is currently registered in the dictionary. I.E. there're members currently in the neighbouring grid
+                    if (m_groupMembers.ContainsKey((curIdx.row + 1, curIdx.col)))
+                        //Perfrom Steering
+                        foreach (var nei in m_groupMembers[(curIdx.row + 1, curIdx.col)])
                         {
-                            //Only if the grid is currently registered in the dictionary. I.E. there're members currently in the neighbouring grid
-                            if (m_groupMembers.ContainsKey((curIdx.row + 1, curIdx.col + 1)))
+                            if (Vector3.SqrMagnitude(nei.position - curMember.position) < m_sqrRadius)
                             {
-                                //Perfrom Steering
-                                foreach (var nei in m_groupMembers[(curIdx.row + 1, curIdx.col + 1)])
-                                {
-                                    if (Vector3.SqrMagnitude(nei.position - curMember.position) < m_sqrRadius)
-                                    {
-                                        GroupSteering(curMember, nei);
-                                    }
-                                }
+                                GroupSteering(curMember, nei);
+                            }
+                        }
+
+                    //Query members in bottom-right neighbour grid
+                    //Only if the grid is currently registered in the dictionary. I.E. there're members currently in the neighbouring grid
+                    if (m_groupMembers.ContainsKey((curIdx.row + 1, curIdx.col + 1)))
+                    {
+                        //Perfrom Steering
+                        foreach (var nei in m_groupMembers[(curIdx.row + 1, curIdx.col + 1)])
+                        {
+                            if (Vector3.SqrMagnitude(nei.position - curMember.position) < m_sqrRadius)
+                            {
+                                GroupSteering(curMember, nei);
                             }
                         }
                     }
 
                     //Query members in right neighbour grids
-                    if (curIdx.col < m_cols - 1)
-                    {
-                        //Only if the grid is currently registered in the dictionary. I.E. there're members currently in the neighbouring grid
-                        if (m_groupMembers.ContainsKey((curIdx.row, curIdx.col + 1)))
-                            //Perfrom Steering
-                            foreach (var nei in m_groupMembers[(curIdx.row, curIdx.col + 1)])
+                    //Only if the grid is currently registered in the dictionary. I.E. there're members currently in the neighbouring grid
+                    if (m_groupMembers.ContainsKey((curIdx.row, curIdx.col + 1)))
+                        //Perfrom Steering
+                        foreach (var nei in m_groupMembers[(curIdx.row, curIdx.col + 1)])
+                        {
+                            if (Vector3.SqrMagnitude(nei.position - curMember.position) < m_sqrRadius)
                             {
-                                if (Vector3.SqrMagnitude(nei.position - curMember.position) < m_sqrRadius)
-                                {
-                                    GroupSteering(curMember, nei);
-                                }
+                                GroupSteering(curMember, nei);
                             }
+                        }
 
-                        //Only if the grid is currently registered in the dictionary. I.E. there're members currently in the neighbouring grid
-                        if (m_groupMembers.ContainsKey((curIdx.row - 1, curIdx.col + 1)))
-                            //Perfrom Steering
-                            foreach (var nei in m_groupMembers[(curIdx.row - 1, curIdx.col + 1)])
+                    //Only if the grid is currently registered in the dictionary. I.E. there're members currently in the neighbouring grid
+                    if (m_groupMembers.ContainsKey((curIdx.row - 1, curIdx.col + 1)))
+                        //Perfrom Steering
+                        foreach (var nei in m_groupMembers[(curIdx.row - 1, curIdx.col + 1)])
+                        {
+                            if (Vector3.SqrMagnitude(nei.position - curMember.position) < m_sqrRadius)
                             {
-                                if (Vector3.SqrMagnitude(nei.position - curMember.position) < m_sqrRadius)
-                                {
-                                    GroupSteering(curMember, nei);
-                                }
+                                GroupSteering(curMember, nei);
                             }
-                    }
+                        }
 
                     //Query members in local grid
                     for (int m = i + 1; m < curMembers.Count; m++)
@@ -251,7 +256,7 @@ namespace SteeringSystem
         /// </summary>
         /// <param name="a"></param>
         /// <param name="b"></param>
-        protected abstract void GroupSteering(ISphereMoveable a, ISphereMoveable b);
+        protected abstract void GroupSteering(SteerAgent a, SteerAgent b);
 
         private void OnDrawGizmosSelected()
         {
@@ -278,7 +283,7 @@ namespace SteeringSystem
         ///<summary>Wrapper function for list's RemoveAt operation that doesn't perform shifting elements</summary>
         private void WrapperListRemoveAt<T>(List<T> ls, int idx)
         {
-            ls[idx] = ls[^1];
+            ls[idx] = ls[ls.Count - 1];
             ls.RemoveAt(ls.Count - 1);
         }
 
@@ -286,14 +291,14 @@ namespace SteeringSystem
 
         #region Dictionary Operations
 
-        private void WrapperDictionaryAdd((int x, int y) key, ISphereMoveable value)
+        private void WrapperDictionaryAdd((int x, int y) key, SteerAgent value)
         {
-            List<ISphereMoveable> members;
+            List<SteerAgent> members;
             if (m_groupMembers.TryGetValue(key, out members))
                 members.Add(value);
             else
             {
-                members = new List<ISphereMoveable>();
+                members = new List<SteerAgent>();
                 members.Add(value);
                 m_groupMembers.Add(key, members);
             }
